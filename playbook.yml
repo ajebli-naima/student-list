@@ -1,0 +1,52 @@
+- hosts: deploy_server
+  become: true
+  tasks:
+#  		- name: Remove the old cloned folder...
+#         shell: sudo rm -r student-list/ simple_api/#
+  	
+	  - name: clone the git repo
+            shell: git clone https://github.com/ajebli-naima/student-list.git
+    	  - name: Go to the placement of the docker-compose.yml
+            shell: cd student-list
+          
+        # docker network
+	  - name: create docker network to interconnect containers
+          docker_network:
+          	name: student-list_network
+          tags:
+               - deploy
+            
+            
+         # deploy API
+	  - name: Deploy api
+          docker_container:
+            name: api
+            hostname: api
+            image: registry.local.com:5000/simple_api
+            state: started
+            volumes:
+            	- /home/naimaajebli/student-list/simple_api/student_age.json:/data/student_age.json
+            ports:
+            	- 5000:5000
+            network:
+            	- name: student-list_network
+            tags:
+            	- deploy
+                
+	# deploy frontend
+	 - name: Deploy frontend
+	   docker_container:
+	     name: website
+             image: php:7.2-apache
+	     state: started
+	     volumes:
+		- /home/naimaajebli/student-list/website:/var/www/html
+	     env:
+		USERNAME: 'toto'
+		PASSWORD: 'python'
+	     ports:
+		- '80:80'
+	     network:
+		- name: student-list_network
+	     tags:
+		- deploy
